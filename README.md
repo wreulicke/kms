@@ -6,8 +6,6 @@
 
 > kms is encrypt/decrypt tool using AWS KMS
 
-### ✨ [Demo](github.com/wreulicke/kms)
-
 ## Install
 
 ```sh
