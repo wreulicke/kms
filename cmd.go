@@ -42,6 +42,7 @@ func NewDecryptCmd(gf *globalFlags) *cobra.Command {
 				Config: aws.Config{
 					Region: &gf.region,
 				},
+				SharedConfigState: session.SharedConfigEnable,
 			})
 			if err != nil {
 				return err
@@ -86,6 +87,7 @@ func NewEncryptCmd(gf *globalFlags) *cobra.Command {
 				Config: aws.Config{
 					Region: &gf.region,
 				},
+				SharedConfigState: session.SharedConfigEnable,
 			})
 			if err != nil {
 				return err
