@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -15,6 +16,7 @@ import (
 type globalFlags struct {
 	profile string
 	region  string
+	input   string
 }
 
 func NewRootCmd() *cobra.Command {
@@ -28,6 +30,7 @@ func NewRootCmd() *cobra.Command {
 	}
 	cmd.PersistentFlags().StringVarP(&f.profile, "profile", "p", "default", "profile")
 	cmd.PersistentFlags().StringVarP(&f.region, "region", "r", "", "region")
+	cmd.PersistentFlags().StringVarP(&f.input, "input", "i", "", "input")
 	cmd.AddCommand(NewEncryptCmd(f), NewDecryptCmd(f))
 	return cmd
 }
@@ -48,12 +51,25 @@ func NewDecryptCmd(gf *globalFlags) *cobra.Command {
 				return err
 			}
 
-			result := prompt.Input("blob: ", func(t prompt.Document) []prompt.Suggest {
-				return []prompt.Suggest{}
-			})
+			var input []byte
+			if gf.input != "" {
+				input, err = os.ReadFile(gf.input)
+				if err != nil {
+					return err
+				}
+			} else if env := os.Getenv("KMS_INPUT"); env != "" {
+				input, err = os.ReadFile(env)
+				if err != nil {
+					return err
+				}
+			} else {
+				input = []byte(prompt.Input("blob: ", func(t prompt.Document) []prompt.Suggest {
+					return []prompt.Suggest{}
+				}))
+			}
 			k := kms.New(sess)
 
-			r, err := base64.StdEncoding.DecodeString(result)
+			r, err := base64.StdEncoding.DecodeString(string(input))
 			if err != nil {
 				return err
 			}
@@ -93,13 +109,26 @@ func NewEncryptCmd(gf *globalFlags) *cobra.Command {
 				return err
 			}
 
-			result := prompt.Input("text: ", func(t prompt.Document) []prompt.Suggest {
-				return []prompt.Suggest{}
-			})
+			var input []byte
+			if gf.input != "" {
+				input, err = os.ReadFile(gf.input)
+				if err != nil {
+					return err
+				}
+			} else if env := os.Getenv("KMS_INPUT"); env != "" {
+				input, err = os.ReadFile(env)
+				if err != nil {
+					return err
+				}
+			} else {
+				input = []byte(prompt.Input("text: ", func(t prompt.Document) []prompt.Suggest {
+					return []prompt.Suggest{}
+				}))
+			}
 			k := kms.New(sess)
 			o, err := k.Encrypt(&kms.EncryptInput{
 				KeyId:     &encryptFlags.keyId,
-				Plaintext: []byte(result),
+				Plaintext: input,
 			})
 			if err != nil {
 				return err
